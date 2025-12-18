@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CourierPro - Delivery Management System</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+      html[dir="rtl"] * {
+        font-family: 'Cairo', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Tahoma, Arial, sans-serif !important;
+        direction: rtl;
+        text-align: right;
+      }
+
+      html[dir="ltr"] * {
+        font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Tahoma, Arial, sans-serif;
+        direction: ltr;
+        text-align: left;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow-x: auto;
+        background-color: #f9fafb;
+      }
+
+      @media (max-width: 768px) {
+        .sidebar {
+          position: fixed;
+          top: 0;
+          bottom: 0;
+          z-index: 50;
+          left: 0;
+        }
+
+        [dir="rtl"] .sidebar {
+          right: 0;
+          left: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" class="min-h-screen w-full overflow-x-auto bg-gray-50"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
