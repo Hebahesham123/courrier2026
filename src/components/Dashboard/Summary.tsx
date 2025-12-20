@@ -1716,6 +1716,56 @@ const Summary: React.FC = () => {
                           </div>
                         </div>
                       </div>
+                      {/* Pending Orders (New from Shopify) */}
+                      <div
+                        className="bg-gradient-to-br from-yellow-50 to-white border-2 border-yellow-200 rounded-lg p-3 cursor-pointer hover:border-yellow-400 hover:shadow-md transition-all duration-200 group"
+                        onClick={() => openOrders(metrics.pending?.orders || [], "الطلبات المعلقة")}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                              <Clock className="w-4 h-4 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="text-xs font-bold text-yellow-900 group-hover:text-yellow-600 transition-colors">الطلبات المعلقة</h3>
+                              <p className="text-xs text-yellow-700">{metrics.pending?.count || 0} طلب</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="pt-2 border-t border-yellow-200">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-yellow-700">القيمة:</span>
+                            <span className="text-sm font-bold text-yellow-900">
+                              {(metrics.pending?.originalValue || 0).toFixed(2)} ج.م
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Assigned Orders (Assigned to courier but not started) */}
+                      <div
+                        className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-3 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200 group"
+                        onClick={() => openOrders(metrics.assigned?.orders || [], "الطلبات المكلفة")}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-500 rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                              <Truck className="w-4 h-4 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="text-xs font-bold text-blue-900 group-hover:text-blue-600 transition-colors">الطلبات المكلفة</h3>
+                              <p className="text-xs text-blue-700">{metrics.assigned?.count || 0} طلب</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="pt-2 border-t border-blue-200">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-blue-700">القيمة:</span>
+                            <span className="text-sm font-bold text-blue-900">
+                              {(metrics.assigned?.originalValue || 0).toFixed(2)} ج.م
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                       {/* Delivered Orders */}
                       <div
                         className="bg-gradient-to-br from-green-50 to-white border-2 border-green-200 rounded-lg p-3 cursor-pointer hover:border-green-400 hover:shadow-md transition-all duration-200 group"
@@ -3288,6 +3338,78 @@ const Summary: React.FC = () => {
                   </div>
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity mt-3">
                     <Eye className={`text-gray-600 mx-auto ${isCourier ? "w-4 h-4" : "w-5 h-5"}`} />
+                  </div>
+                </div>
+                {/* Pending Orders */}
+                <div
+                  className={`bg-yellow-50 border-2 border-yellow-200 rounded-xl cursor-pointer hover:shadow-lg transition-all group ${
+                    isCourier ? "p-4" : "p-6"
+                  }`}
+                  onClick={() => openOrders(metrics.pending?.orders || [], "الطلبات المعلقة")}
+                >
+                  <div className={`flex items-center gap-4 ${isCourier ? "mb-2" : "mb-4"}`}>
+                    <div
+                      className={`bg-yellow-200 rounded-xl flex items-center justify-center ${
+                        isCourier ? "w-8 h-8" : "w-12 h-12"
+                      }`}
+                    >
+                      <Clock className={`text-yellow-700 ${isCourier ? "w-4 h-4" : "w-6 h-6"}`} />
+                    </div>
+                    <div>
+                      <h3 className={`font-bold text-yellow-900 ${isCourier ? "text-sm" : "text-lg"}`}>
+                        {isCourier ? "المعلقة" : "الطلبات المعلقة"}
+                      </h3>
+                      <p className={`text-yellow-700 ${isCourier ? "text-xs" : "text-sm"}`}>
+                        {metrics.pending?.count || 0} طلب
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className={`flex justify-between items-center pt-2 border-t border-yellow-300`}>
+                      <span className={`font-bold text-yellow-700 ${isCourier ? "text-xs" : "text-sm"}`}>القيمة:</span>
+                      <span className={`font-bold text-yellow-900 ${isCourier ? "text-sm" : "text-xl"}`}>
+                        {(metrics.pending?.originalValue || 0).toFixed(0)} ج.م
+                      </span>
+                    </div>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity mt-3">
+                    <Eye className={`text-yellow-600 mx-auto ${isCourier ? "w-4 h-4" : "w-5 h-5"}`} />
+                  </div>
+                </div>
+                {/* Assigned Orders */}
+                <div
+                  className={`bg-blue-50 border-2 border-blue-200 rounded-xl cursor-pointer hover:shadow-lg transition-all group ${
+                    isCourier ? "p-4" : "p-6"
+                  }`}
+                  onClick={() => openOrders(metrics.assigned?.orders || [], "الطلبات المكلفة")}
+                >
+                  <div className={`flex items-center gap-4 ${isCourier ? "mb-2" : "mb-4"}`}>
+                    <div
+                      className={`bg-blue-200 rounded-xl flex items-center justify-center ${
+                        isCourier ? "w-8 h-8" : "w-12 h-12"
+                      }`}
+                    >
+                      <Truck className={`text-blue-700 ${isCourier ? "w-4 h-4" : "w-6 h-6"}`} />
+                    </div>
+                    <div>
+                      <h3 className={`font-bold text-blue-900 ${isCourier ? "text-sm" : "text-lg"}`}>
+                        {isCourier ? "المكلفة" : "الطلبات المكلفة"}
+                      </h3>
+                      <p className={`text-blue-700 ${isCourier ? "text-xs" : "text-sm"}`}>
+                        {metrics.assigned?.count || 0} طلب
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className={`flex justify-between items-center pt-2 border-t border-blue-300`}>
+                      <span className={`font-bold text-blue-700 ${isCourier ? "text-xs" : "text-sm"}`}>القيمة:</span>
+                      <span className={`font-bold text-blue-900 ${isCourier ? "text-sm" : "text-xl"}`}>
+                        {(metrics.assigned?.originalValue || 0).toFixed(0)} ج.م
+                      </span>
+                    </div>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity mt-3">
+                    <Eye className={`text-blue-600 mx-auto ${isCourier ? "w-4 h-4" : "w-5 h-5"}`} />
                   </div>
                 </div>
                 {/* Delivered Orders */}
