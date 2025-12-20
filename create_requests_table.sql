@@ -1,110 +1,99 @@
--- Create Requests Table for Shopify Form
--- Run this SQL in your Supabase SQL Editor
+-- ============================================
+-- Customer Requests Feature - Database Setup
+-- Run this in Supabase SQL Editor
+-- ============================================
 
--- Create the requests table if it doesn't exist
+-- Create requests table
 CREATE TABLE IF NOT EXISTS requests (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    phone VARCHAR(50) NOT NULL,
-    comment TEXT NOT NULL,
-    order_id TEXT,  -- For storing Shopify order IDs
-    image_url TEXT, -- For storing uploaded image URLs
-    video_url TEXT, -- For storing uploaded video URLs
-    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'process', 'approved', 'cancelled')),
-    assignee VARCHAR(100), -- For assigning requests to team members
-    created_by VARCHAR(100) NOT NULL DEFAULT 'user:shopify-form',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    email VARCHAR(255),
+    phone VARCHAR(50),
+    comment TEXT,
+    order_id VARCHAR(100),
+    image_url TEXT,
+    video_url TEXT,
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'process', 'approved', 'cancelled')),
+    assignee VARCHAR(100),
+    created_by UUID REFERENCES auth.users(id),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create indexes for better performance (if they don't exist)
+-- Create request_notes table for notes/comments on requests
+CREATE TABLE IF NOT EXISTS request_notes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    request_id UUID REFERENCES requests(id) ON DELETE CASCADE,
+    note TEXT,
+    author VARCHAR(255),
+    image_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create indexes for faster queries
 CREATE INDEX IF NOT EXISTS idx_requests_status ON requests(status);
-CREATE INDEX IF NOT EXISTS idx_requests_email ON requests(email);
-CREATE INDEX IF NOT EXISTS idx_requests_created_at ON requests(created_at);
+CREATE INDEX IF NOT EXISTS idx_requests_created_at ON requests(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_requests_assignee ON requests(assignee);
+CREATE INDEX IF NOT EXISTS idx_request_notes_request_id ON request_notes(request_id);
 
--- Enable Row Level Security (RLS) if not already enabled
+-- Enable Row Level Security (RLS)
 ALTER TABLE requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE request_notes ENABLE ROW LEVEL SECURITY;
 
--- Drop existing policies if they exist, then create new ones
-DROP POLICY IF EXISTS "Allow authenticated users to insert requests" ON requests;
-DROP POLICY IF EXISTS "Allow authenticated users to read requests" ON requests;
-DROP POLICY IF EXISTS "Allow admins to update requests" ON requests;
-DROP POLICY IF EXISTS "Allow admins to delete requests" ON requests;
-
--- Create policies for RLS
--- Allow all authenticated users to insert requests
-CREATE POLICY "Allow authenticated users to insert requests" ON requests
-    FOR INSERT TO authenticated
-    WITH CHECK (true);
-
--- Allow all authenticated users to read requests
-CREATE POLICY "Allow authenticated users to read requests" ON requests
-    FOR SELECT TO authenticated
+-- Create RLS policies for requests table
+-- Allow all authenticated users to view requests
+CREATE POLICY "Allow authenticated users to view requests" ON requests
+    FOR SELECT
+    TO authenticated
     USING (true);
 
--- Allow admins to update requests
-CREATE POLICY "Allow admins to update requests" ON requests
-    FOR UPDATE TO authenticated
-    USING (
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE users.id = auth.uid() 
-            AND users.role = 'admin'
-        )
-    );
+-- Allow authenticated users to insert requests
+CREATE POLICY "Allow authenticated users to insert requests" ON requests
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (true);
 
--- Allow admins to delete requests
-CREATE POLICY "Allow admins to delete requests" ON requests
-    FOR DELETE TO authenticated
-    USING (
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE users.id = auth.uid() 
-            AND users.role = 'admin'
-        )
-    );
+-- Allow authenticated users to update requests
+CREATE POLICY "Allow authenticated users to update requests" ON requests
+    FOR UPDATE
+    TO authenticated
+    USING (true);
 
--- Grant necessary permissions
-GRANT ALL ON requests TO authenticated;
-GRANT USAGE ON SCHEMA public TO authenticated;
+-- Allow authenticated users to delete requests
+CREATE POLICY "Allow authenticated users to delete requests" ON requests
+    FOR DELETE
+    TO authenticated
+    USING (true);
 
--- Create a function to automatically update the updated_at timestamp
-CREATE OR REPLACE FUNCTION update_requests_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
+-- Create RLS policies for request_notes table
+CREATE POLICY "Allow authenticated users to view request_notes" ON request_notes
+    FOR SELECT
+    TO authenticated
+    USING (true);
 
--- Drop existing trigger if it exists, then create new one
-DROP TRIGGER IF EXISTS update_requests_updated_at ON requests;
+CREATE POLICY "Allow authenticated users to insert request_notes" ON request_notes
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (true);
 
--- Create a trigger to automatically update the updated_at column
-CREATE TRIGGER update_requests_updated_at 
-    BEFORE UPDATE ON requests 
-    FOR EACH ROW 
-    EXECUTE FUNCTION update_requests_updated_at();
+CREATE POLICY "Allow authenticated users to update request_notes" ON request_notes
+    FOR UPDATE
+    TO authenticated
+    USING (true);
 
--- Verify the table structure
-SELECT 
-    table_name,
-    column_name,
-    data_type,
-    is_nullable,
-    column_default
-FROM information_schema.columns 
-WHERE table_name = 'requests' 
-ORDER BY ordinal_position;
+CREATE POLICY "Allow authenticated users to delete request_notes" ON request_notes
+    FOR DELETE
+    TO authenticated
+    USING (true);
 
--- Verify the policies were created
-SELECT 
-    policyname,
-    cmd,
-    permissive,
-    roles
-FROM pg_policies 
-WHERE tablename = 'requests' 
-ORDER BY policyname;
+-- Create storage bucket for uploads if not exists
+-- Note: This needs to be done in the Storage section of Supabase Dashboard
+-- Or via the API. The bucket name should be 'uploads'
+
+-- Grant storage access (run this separately if bucket exists)
+-- INSERT INTO storage.buckets (id, name, public) 
+-- VALUES ('uploads', 'uploads', true)
+-- ON CONFLICT (id) DO NOTHING;
+
+COMMENT ON TABLE requests IS 'Customer requests/complaints management table';
+COMMENT ON TABLE request_notes IS 'Notes and follow-up comments for customer requests';
