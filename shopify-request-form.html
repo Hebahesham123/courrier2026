@@ -236,49 +236,51 @@
     </div>
 
     <script>
+        // Wrap in IIFE to avoid variable conflicts
+        (function() {
         // Supabase Configuration
         const SUPABASE_URL = 'https://bdquuixqypkmbvvfymvm.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkcXV1aXhxeXBrbWJ2dmZ5bXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyODgxNTQsImV4cCI6MjA4MDg2NDE1NH0.XK5oL2CyL_9-PGpDRjm1Mj4QPDGIqO-DIcNxZtQ0vIA';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        function showPreview(input, previewId) {
+        window.showPreview = function(input, previewId) {
             const file = input.files[0];
             if (!file) return;
             const preview = document.getElementById(previewId);
             const size = (file.size / 1024 / 1024).toFixed(2);
             preview.innerHTML = `<div class="file-item"><span class="file-name">📎 ${file.name} (${size} MB)</span><button type="button" class="remove-btn" onclick="clearFile('${input.id}','${previewId}')">Remove</button></div>`;
             preview.style.display = 'block';
-        }
+        };
 
-        function clearFile(inputId, previewId) {
+        window.clearFile = function(inputId, previewId) {
             document.getElementById(inputId).value = '';
             document.getElementById(previewId).style.display = 'none';
-        }
+        };
 
-        function addOrder() {
+        window.addOrder = function() {
             const container = document.getElementById('orderContainer');
             const div = document.createElement('div');
             div.className = 'order-item';
             div.innerHTML = '<input type="text" class="order-input" placeholder="Order ID"><button type="button" class="remove-btn" onclick="removeOrder(this)">Remove</button>';
             container.appendChild(div);
             container.querySelectorAll('.remove-btn').forEach(b => b.style.display = 'inline-block');
-        }
+        };
 
-        function removeOrder(btn) {
+        window.removeOrder = function(btn) {
             const container = document.getElementById('orderContainer');
             btn.parentElement.remove();
             if (container.querySelectorAll('.order-item').length === 1) {
                 container.querySelector('.remove-btn').style.display = 'none';
             }
-        }
+        };
 
         async function uploadFile(file, type) {
             try {
                 const ext = file.name.split('.').pop();
                 const path = `requests/${type}s/${Date.now()}_${Math.random().toString(36).substr(2)}.${ext}`;
-                const { error } = await supabase.storage.from('uploads').upload(path, file);
+                const { error } = await sbClient.storage.from('uploads').upload(path, file);
                 if (error) throw error;
-                const { data } = supabase.storage.from('uploads').getPublicUrl(path);
+                const { data } = sbClient.storage.from('uploads').getPublicUrl(path);
                 return data.publicUrl;
             } catch (e) {
                 console.error('Upload error:', e);
@@ -292,14 +294,17 @@
             const form = this;
             const btn = document.getElementById('submitBtn');
             const loading = document.getElementById('loading');
+            const errorMsg = document.getElementById('errorMsg');
             
             btn.disabled = true;
             form.style.display = 'none';
             loading.style.display = 'block';
             document.getElementById('successMsg').style.display = 'none';
-            document.getElementById('errorMsg').style.display = 'none';
+            errorMsg.style.display = 'none';
 
             try {
+                console.log('Starting form submission...');
+                
                 const orders = [];
                 document.querySelectorAll('.order-input').forEach(i => { if (i.value.trim()) orders.push(i.value.trim()); });
 
@@ -309,7 +314,21 @@
                 if (imgFile) imageUrl = await uploadFile(imgFile, 'image');
                 if (vidFile) videoUrl = await uploadFile(vidFile, 'video');
 
-                // Use fetch directly (more reliable)
+                const requestData = {
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+                    comment: document.getElementById('comment').value,
+                    order_id: orders.length ? orders.join(', ') : null,
+                    image_url: imageUrl,
+                    video_url: videoUrl,
+                    status: 'pending',
+                    created_by: 'customer-form'
+                };
+                
+                console.log('Sending data:', requestData);
+                console.log('URL:', SUPABASE_URL + '/rest/v1/requests');
+
                 const response = await fetch(`${SUPABASE_URL}/rest/v1/requests`, {
                     method: 'POST',
                     headers: {
@@ -318,24 +337,18 @@
                         'Authorization': `Bearer ${SUPABASE_KEY}`,
                         'Prefer': 'return=minimal'
                     },
-                    body: JSON.stringify({
-                        name: document.getElementById('name').value,
-                        email: document.getElementById('email').value,
-                        phone: document.getElementById('phone').value,
-                        comment: document.getElementById('comment').value,
-                        order_id: orders.length ? orders.join(', ') : null,
-                        image_url: imageUrl,
-                        video_url: videoUrl,
-                        status: 'pending',
-                        created_by: 'customer-form'
-                    })
+                    body: JSON.stringify(requestData)
                 });
 
+                console.log('Response status:', response.status);
+                
                 if (!response.ok) {
                     const errorText = await response.text();
+                    console.error('Error response:', errorText);
                     throw new Error(`Failed: ${response.status} - ${errorText}`);
                 }
 
+                console.log('SUCCESS! Data submitted.');
                 loading.style.display = 'none';
                 document.getElementById('successMsg').style.display = 'block';
                 form.reset();
@@ -347,9 +360,11 @@
                 loading.style.display = 'none';
                 form.style.display = 'block';
                 btn.disabled = false;
-                document.getElementById('errorMsg').style.display = 'block';
+                errorMsg.innerHTML = `<div style="font-size:16px">❌ Error: ${err.message}</div>`;
+                errorMsg.style.display = 'block';
             }
         });
+        })(); // End IIFE
     </script>
 </body>
 </html>
