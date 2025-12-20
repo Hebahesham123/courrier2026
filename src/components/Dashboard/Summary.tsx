@@ -570,9 +570,8 @@ const Summary: React.FC = () => {
           // If a courier is selected, fetch all their orders for the date range
           console.log('Fetching orders for selected courier:', selectedCourier.courierName)
           
-          // Include orders where courier is CURRENTLY assigned OR was ORIGINALLY assigned
-          // This ensures orders remain tracked even after reassignment
-          const { data, error } = await supabase
+          // Fetch by updated_at
+          const { data: updatedAtData, error: updatedAtError } = await supabase
             .from("orders")
             .select(`
               *,
@@ -583,12 +582,36 @@ const Summary: React.FC = () => {
             .gte("updated_at", `${dateRange.startDate}T00:00:00`)
             .lte("updated_at", `${dateRange.endDate}T23:59:59`)
           
-          if (error) {
-            console.error('Error fetching selected courier orders:', error)
+          // Also fetch by assigned_at
+          const { data: assignedAtData } = await supabase
+            .from("orders")
+            .select(`
+              *,
+              order_proofs (id, image_data),
+              assigned_courier:users!orders_assigned_courier_id_fkey(id, name, email)
+            `)
+            .or(`assigned_courier_id.eq.${selectedCourier.courierId},original_courier_id.eq.${selectedCourier.courierId}`)
+            .not("assigned_at", "is", null)
+            .gte("assigned_at", `${dateRange.startDate}T00:00:00`)
+            .lte("assigned_at", `${dateRange.endDate}T23:59:59`)
+          
+          if (updatedAtError) {
+            console.error('Error fetching selected courier orders:', updatedAtError)
             orders = []
           } else {
+            // Merge both results, removing duplicates
+            const orderMap = new Map<string, any>()
+            for (const order of (assignedAtData || [])) {
+              orderMap.set(order.id, order)
+            }
+            for (const order of (updatedAtData || [])) {
+              if (!orderMap.has(order.id)) {
+                orderMap.set(order.id, order)
+              }
+            }
+            
             // Map courier information to orders
-            orders = ((data ?? []) as any[]).map((order: any) => ({
+            orders = Array.from(orderMap.values()).map((order: any) => ({
               ...order,
               courier_name: order.assigned_courier?.name || selectedCourier.courierName || null,
               courier_email: order.assigned_courier?.email || null,
@@ -599,9 +622,11 @@ const Summary: React.FC = () => {
           
         } else if (showAnalytics) {
           // If showing analytics, fetch ALL orders from ALL couriers for the date range
+          // Check both updated_at and assigned_at to ensure assigned orders are included
           console.log('Fetching ALL orders from ALL couriers for analytics')
           
-          const { data, error } = await supabase
+          // Fetch by updated_at
+          const { data: updatedAtData, error: updatedAtError } = await supabase
             .from("orders")
             .select(`
               *,
@@ -611,12 +636,35 @@ const Summary: React.FC = () => {
             .gte("updated_at", `${dateRange.startDate}T00:00:00`)
             .lte("updated_at", `${dateRange.endDate}T23:59:59`)
           
-          if (error) {
-            console.error('Error fetching all orders:', error)
+          // Also fetch by assigned_at to catch orders assigned in date range
+          const { data: assignedAtData } = await supabase
+            .from("orders")
+            .select(`
+              *,
+              order_proofs (id, image_data),
+              assigned_courier:users!orders_assigned_courier_id_fkey(id, name, email)
+            `)
+            .not("assigned_at", "is", null)
+            .gte("assigned_at", `${dateRange.startDate}T00:00:00`)
+            .lte("assigned_at", `${dateRange.endDate}T23:59:59`)
+          
+          if (updatedAtError) {
+            console.error('Error fetching all orders:', updatedAtError)
             orders = []
           } else {
+            // Merge both results, removing duplicates
+            const orderMap = new Map<string, any>()
+            for (const order of (assignedAtData || [])) {
+              orderMap.set(order.id, order)
+            }
+            for (const order of (updatedAtData || [])) {
+              if (!orderMap.has(order.id)) {
+                orderMap.set(order.id, order)
+              }
+            }
+            
             // Map courier information to orders
-            orders = ((data ?? []) as any[]).map((order: any) => ({
+            orders = Array.from(orderMap.values()).map((order: any) => ({
               ...order,
               courier_name: order.assigned_courier?.name || null,
               courier_email: order.assigned_courier?.email || null,
@@ -627,9 +675,11 @@ const Summary: React.FC = () => {
           
         } else {
           // Default: fetch ALL orders (including unassigned) for admin dashboard
+          // Check both updated_at and assigned_at to ensure assigned orders are included
           console.log('Fetching ALL orders (including unassigned) for admin dashboard')
           
-          const { data, error } = await supabase
+          // Fetch by updated_at
+          const { data: updatedAtData, error: updatedAtError } = await supabase
             .from("orders")
             .select(`
               *,
@@ -639,12 +689,35 @@ const Summary: React.FC = () => {
             .gte("updated_at", `${dateRange.startDate}T00:00:00`)
             .lte("updated_at", `${dateRange.endDate}T23:59:59`)
           
-          if (error) {
-            console.error('Error fetching all orders:', error)
+          // Also fetch by assigned_at to catch orders assigned in date range
+          const { data: assignedAtData } = await supabase
+            .from("orders")
+            .select(`
+              *,
+              order_proofs (id, image_data),
+              assigned_courier:users!orders_assigned_courier_id_fkey(id, name, email)
+            `)
+            .not("assigned_at", "is", null)
+            .gte("assigned_at", `${dateRange.startDate}T00:00:00`)
+            .lte("assigned_at", `${dateRange.endDate}T23:59:59`)
+          
+          if (updatedAtError) {
+            console.error('Error fetching all orders:', updatedAtError)
             orders = []
           } else {
+            // Merge both results, removing duplicates
+            const orderMap = new Map<string, any>()
+            for (const order of (assignedAtData || [])) {
+              orderMap.set(order.id, order)
+            }
+            for (const order of (updatedAtData || [])) {
+              if (!orderMap.has(order.id)) {
+                orderMap.set(order.id, order)
+              }
+            }
+            
             // Map courier information to orders
-            orders = ((data ?? []) as any[]).map((order: any) => ({
+            orders = Array.from(orderMap.values()).map((order: any) => ({
               ...order,
               courier_name: order.assigned_courier?.name || null,
               courier_email: order.assigned_courier?.email || null,
