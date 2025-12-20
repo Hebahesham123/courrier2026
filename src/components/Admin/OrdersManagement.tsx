@@ -3087,21 +3087,6 @@ const OrdersManagement: React.FC = () => {
           <div className="bg-white rounded-lg border border-gray-200 p-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-600">الطلبات المخصصة</p>
-                <p className="text-xl font-bold text-gray-900 mt-0.5">
-                  {orders.filter((order) => isOrderAssigned(order)).length}
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">Assigned Orders</p>
-              </div>
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <UserCheck className="w-5 h-5 text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-200 p-3">
-            <div className="flex items-center justify-between">
-              <div>
                 <p className="text-xs font-medium text-gray-600">القيمة الإجمالية</p>
                 <p className="text-xl font-bold text-gray-900 mt-0.5">
                   {orders.reduce((sum, order) => {
