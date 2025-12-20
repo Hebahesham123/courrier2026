@@ -1675,7 +1675,7 @@ const Summary: React.FC = () => {
               return (
                 <div className="space-y-4">
                   {/* 📦 Order Summary Section */}
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3">
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 transform transition-all duration-300 hover:shadow-lg" style={{ animation: 'slideUp 0.3s ease-out forwards' }}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
@@ -1900,7 +1900,7 @@ const Summary: React.FC = () => {
                   </div>
 
                   {/* 💰 Total Collected and Not Delivered Summary */}
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3">
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 transform transition-all duration-300 hover:shadow-lg" style={{ animation: 'slideUp 0.3s ease-out 0.1s forwards', opacity: 0 }}>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
                         <Calculator className="w-4 h-4 text-white" />
@@ -2033,7 +2033,7 @@ const Summary: React.FC = () => {
                   </div>
 
                   {/* 💳 Payment Breakdown */}
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3">
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 transform transition-all duration-300 hover:shadow-lg" style={{ animation: 'slideUp 0.3s ease-out 0.2s forwards', opacity: 0 }}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-sm">
@@ -2205,7 +2205,7 @@ const Summary: React.FC = () => {
                   </div>
 
                   {/* 🚨 Hold Fees - ALWAYS VISIBLE - ALL DAYS */}
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3">
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 transform transition-all duration-300 hover:shadow-lg" style={{ animation: 'slideUp 0.3s ease-out 0.3s forwards', opacity: 0 }}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-sm">
@@ -2343,7 +2343,7 @@ const Summary: React.FC = () => {
                   </div>
 
                   {/* 🧾 Total Hand to Accounting */}
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3">
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 transform transition-all duration-300 hover:shadow-lg" style={{ animation: 'slideUp 0.3s ease-out 0.4s forwards', opacity: 0 }}>
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-7 h-7 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-sm">
                         <Receipt className="w-4 h-4 text-white" />
@@ -2365,7 +2365,7 @@ const Summary: React.FC = () => {
         ) : (
           /* Courier Selection */
           <div className="max-w-7xl mx-auto px-6 pb-8">
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden transform transition-all duration-300 hover:shadow-lg" style={{ animation: 'slideUp 0.3s ease-out forwards' }}>
               <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -2414,8 +2414,8 @@ const Summary: React.FC = () => {
 
         {/* Orders Modal */}
         {selectedOrders.length > 0 && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-xl">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 modal-backdrop">
+            <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-xl modal-content">
               {/* Modal Header */}
               <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
                 <div className="flex items-center gap-3">

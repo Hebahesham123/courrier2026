@@ -1761,7 +1761,7 @@ const deleteDuplicatedOrder = async (order: Order) => {
         ) : (
           // Orders List - 2 Columns on Mobile, Single on Desktop (Compact)
           <div className="grid grid-cols-2 sm:grid-cols-1 gap-2 sm:gap-3">
-            {orders.map((order) => {
+            {orders.map((order, index) => {
               const statusInfo = getStatusInfo(order.status)
               const StatusIcon = statusInfo.icon
               const deliveryFee = order.delivery_fee || 0
@@ -1778,12 +1778,13 @@ const deleteDuplicatedOrder = async (order: Order) => {
                     e.stopPropagation()
                     openModal(order)
                   }}
-                  className={`relative bg-white rounded-xl sm:rounded-2xl shadow-md overflow-hidden transition-all active:scale-[0.98] cursor-pointer ${
+                  className={`relative bg-white rounded-xl sm:rounded-2xl shadow-md overflow-hidden transition-all active:scale-[0.98] cursor-pointer animate-slideIn hover:shadow-lg ${
                     isEditedOrder ? "border-2 border-dashed border-red-400 bg-red-50/50 opacity-75" : 
                     order.order_id.includes("(نسخة)") ? "border-2 border-green-300 bg-green-50" : 
                     order.status === "assigned" ? "border-2 border-blue-300 bg-blue-50" :
                     "border-2 border-gray-200"
                   }`}
+                  style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
                 >
                   {/* Status Indicator Bar - Thinner on mobile */}
                   <div className={`h-0.5 sm:h-1 ${
@@ -1977,8 +1978,8 @@ const deleteDuplicatedOrder = async (order: Order) => {
 
         {/* Phone Options Modal */}
         {phoneOptionsOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-            <div className="bg-white rounded-xl shadow-xl max-w-sm w-full">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 modal-backdrop">
+            <div className="bg-white rounded-xl shadow-xl max-w-sm w-full modal-content">
               <div className="p-6">
                 <div className="text-center mb-6">
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -2031,10 +2032,10 @@ const deleteDuplicatedOrder = async (order: Order) => {
 
         {/* Update Order Modal - Mobile Optimized */}
         {modalOpen && selectedOrder && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 modal-backdrop">
             <div 
               ref={modalScroll.containerRef}
-              className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-auto flex flex-col"
+              className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-auto flex flex-col modal-content"
             >
               {/* Modal Header - Compact Mobile */}
               <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-3 sm:p-6 rounded-t-3xl sm:rounded-t-2xl sticky top-0 z-10">

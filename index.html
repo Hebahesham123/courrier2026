@@ -52,6 +52,52 @@
         height: 100%;
         overflow-x: auto;
         background-color: #f9fafb;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      /* Smooth page load animation */
+      #root {
+        opacity: 0;
+        animation: fadeInPage 0.4s ease-out 0.1s forwards;
+      }
+
+      @keyframes fadeInPage {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* Loading spinner */
+      .app-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        z-index: 9999;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+      }
+
+      .app-loader.hidden {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      .loader-spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid rgba(255, 255, 255, 0.2);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: loaderSpin 0.8s linear infinite;
+      }
+
+      @keyframes loaderSpin {
+        to { transform: rotate(360deg); }
       }
 
       @media (max-width: 768px) {
@@ -68,9 +114,23 @@
           left: auto;
         }
       }
+
+      /* Smooth scrolling */
+      * {
+        scroll-behavior: smooth;
+      }
+
+      /* Better touch experience */
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
     </style>
   </head>
   <body>
+    <!-- Loading Screen -->
+    <div id="app-loader" class="app-loader">
+      <div class="loader-spinner"></div>
+    </div>
     <div id="root" class="min-h-screen w-full overflow-x-auto bg-gray-50"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
