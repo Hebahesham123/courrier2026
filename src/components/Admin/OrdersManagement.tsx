@@ -1040,6 +1040,20 @@ const OrdersManagement: React.FC = () => {
         updated_at: new Date().toISOString(), // Explicitly update updated_at so order appears on assignment date
       }
       
+      // Convert empty strings to null for UUID fields (Supabase requires null, not "")
+      if (updateData.assigned_courier_id === "") {
+        updateData.assigned_courier_id = null
+        updateData.status = "pending" // Reset status when unassigning
+      }
+      if (updateData.original_courier_id === "") {
+        updateData.original_courier_id = null
+      }
+      
+      // If reassigning to a new courier, update assigned_at
+      if (updateData.assigned_courier_id && updateData.assigned_courier_id !== originalOrder?.assigned_courier_id) {
+        updateData.assigned_at = new Date().toISOString()
+      }
+      
       // If payment_method was changed, make sure it's included in the update
       if (changes.payment_method !== undefined) {
         updateData.payment_method = changes.payment_method
