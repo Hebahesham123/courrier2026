@@ -240,11 +240,41 @@ Deno.serve(async (req: Request) => {
       // Check if order exists in orders table (where frontend reads from)
       const { data: existing } = await supabaseClient
         .from('orders')
-        .select('id')
+        .select('id, assigned_courier_id, updated_at')
         .eq('shopify_order_id', shopifyOrder.id)
         .maybeSingle()
 
-      // Upsert order to orders table (frontend reads from here)
+      // If order already exists AND has a courier assigned, don't update certain fields
+      // to preserve the assignment date and status
+      if (existing && existing.assigned_courier_id) {
+        // For orders with courier assignments, only update Shopify metadata, not the management fields
+        const updateData: any = {
+          shopify_updated_at: orderData.shopify_updated_at,
+          shopify_cancelled_at: orderData.shopify_cancelled_at,
+          shopify_closed_at: orderData.shopify_closed_at,
+          financial_status: orderData.financial_status,
+          // Keep these updated from Shopify
+          total_order_fees: orderData.total_order_fees,
+          subtotal_price: orderData.subtotal_price,
+          total_tax: orderData.total_tax,
+          total_discounts: orderData.total_discounts,
+          // DON'T update: status, assigned_courier_id, updated_at - these are managed by the courier system
+        }
+        
+        const { error } = await supabaseClient
+          .from('orders')
+          .update(updateData)
+          .eq('shopify_order_id', shopifyOrder.id)
+        
+        if (error) {
+          console.error(`Error updating order ${shopifyOrder.id}:`, error)
+          return { imported: false, updated: false }
+        }
+        
+        return { imported: false, updated: true }
+      }
+
+      // Upsert order to orders table (frontend reads from here) - for new orders or unassigned orders
       const { error } = await supabaseClient
         .from('orders')
         .upsert(orderData, { onConflict: 'shopify_order_id' })

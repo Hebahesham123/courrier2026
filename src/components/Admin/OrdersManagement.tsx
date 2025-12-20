@@ -1140,6 +1140,7 @@ const OrdersManagement: React.FC = () => {
       }
 
       // Update local state instead of refetching all orders
+      const nowIso = new Date().toISOString()
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           selectedOrders.includes(order.id)
@@ -1148,6 +1149,7 @@ const OrdersManagement: React.FC = () => {
                 assigned_courier_id: selectedCourier,
                 status: "assigned",
                 courier_name: couriers.find((c) => c.id === selectedCourier)?.name || undefined,
+                updated_at: nowIso, // Include updated_at so order appears in today's view
               }
             : order
         )
