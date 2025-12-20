@@ -1121,11 +1121,13 @@ const OrdersManagement: React.FC = () => {
         .select("id, assigned_courier_id, original_courier_id")
         .in("id", selectedOrders)
 
+      const nowIso = new Date().toISOString()
       for (const order of currentOrders || []) {
         const updateData: any = {
           assigned_courier_id: selectedCourier,
           status: "assigned",
-          updated_at: new Date().toISOString(), // Explicitly update updated_at so order appears on assignment date
+          updated_at: nowIso, // Explicitly update updated_at so order appears on assignment date
+          assigned_at: nowIso, // Track the actual assignment date (never overwritten by sync)
         }
 
         if (!order.original_courier_id && order.assigned_courier_id) {
@@ -1140,7 +1142,6 @@ const OrdersManagement: React.FC = () => {
       }
 
       // Update local state instead of refetching all orders
-      const nowIso = new Date().toISOString()
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           selectedOrders.includes(order.id)
@@ -1150,6 +1151,7 @@ const OrdersManagement: React.FC = () => {
                 status: "assigned",
                 courier_name: couriers.find((c) => c.id === selectedCourier)?.name || undefined,
                 updated_at: nowIso, // Include updated_at so order appears in today's view
+                assigned_at: nowIso, // Track assignment date
               }
             : order
         )
