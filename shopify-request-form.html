@@ -157,81 +157,81 @@
 </head>
 <body>
     <div class="container">
-        <h1>📝 طلب شكوى أو استفسار</h1>
-        <p class="subtitle">سنتواصل معك في أقرب وقت ممكن</p>
+        <h1>📝 Submit a Request</h1>
+        <p class="subtitle">We'll get back to you as soon as possible</p>
         
         <form id="requestForm">
             <div class="form-group">
-                <label>الاسم الكامل <span class="required">*</span></label>
-                <input type="text" id="name" required placeholder="أدخل اسمك الكامل">
+                <label>Full Name <span class="required">*</span></label>
+                <input type="text" id="name" required placeholder="Enter your full name">
             </div>
             
             <div class="form-group">
-                <label>البريد الإلكتروني <span class="required">*</span></label>
-                <input type="email" id="email" required placeholder="example@email.com">
+                <label>Email <span class="required">*</span></label>
+                <input type="email" id="email" required placeholder="your@email.com">
             </div>
             
             <div class="form-group">
-                <label>رقم الهاتف <span class="required">*</span></label>
-                <input type="tel" id="phone" required placeholder="رقم هاتفك">
+                <label>Phone Number <span class="required">*</span></label>
+                <input type="tel" id="phone" required placeholder="Your phone number">
             </div>
             
             <div class="form-group">
-                <label>تفاصيل الطلب <span class="required">*</span></label>
-                <textarea id="comment" required placeholder="اكتب تفاصيل طلبك هنا..."></textarea>
+                <label>Request Details <span class="required">*</span></label>
+                <textarea id="comment" required placeholder="Please describe your request in detail..."></textarea>
             </div>
             
             <div class="form-group">
-                <label>رقم الطلب (اختياري)</label>
+                <label>Order ID (Optional)</label>
                 <div class="order-section">
                     <div id="orderContainer">
                         <div class="order-item">
-                            <input type="text" class="order-input" placeholder="رقم الطلب مثل #1234">
-                            <button type="button" class="remove-btn" onclick="removeOrder(this)" style="display:none">حذف</button>
+                            <input type="text" class="order-input" placeholder="Order ID e.g. #1234">
+                            <button type="button" class="remove-btn" onclick="removeOrder(this)" style="display:none">Remove</button>
                         </div>
                     </div>
-                    <button type="button" class="add-btn" onclick="addOrder()">+ إضافة طلب آخر</button>
+                    <button type="button" class="add-btn" onclick="addOrder()">+ Add Another Order</button>
                 </div>
             </div>
             
             <div class="form-group">
-                <label>إرفاق صورة (اختياري)</label>
+                <label>Attach Photo (Optional)</label>
                 <div class="file-upload" onclick="document.getElementById('image').click()">
                     <div class="file-icon">📷</div>
-                    <div class="file-info">اضغط لرفع صورة</div>
-                    <div class="file-info" style="font-size:11px;color:#999">الحد الأقصى 5MB</div>
+                    <div class="file-info">Click to upload image</div>
+                    <div class="file-info" style="font-size:11px;color:#999">Max size 5MB</div>
                     <input type="file" id="image" accept="image/*" onchange="showPreview(this,'imagePreview')">
                 </div>
                 <div id="imagePreview" class="file-preview"></div>
             </div>
             
             <div class="form-group">
-                <label>إرفاق فيديو (اختياري)</label>
+                <label>Attach Video (Optional)</label>
                 <div class="file-upload" onclick="document.getElementById('video').click()">
                     <div class="file-icon">🎥</div>
-                    <div class="file-info">اضغط لرفع فيديو</div>
-                    <div class="file-info" style="font-size:11px;color:#999">الحد الأقصى 50MB</div>
+                    <div class="file-info">Click to upload video</div>
+                    <div class="file-info" style="font-size:11px;color:#999">Max size 50MB</div>
                     <input type="file" id="video" accept="video/*" onchange="showPreview(this,'videoPreview')">
                 </div>
                 <div id="videoPreview" class="file-preview"></div>
             </div>
             
-            <button type="submit" class="submit-btn" id="submitBtn">إرسال الطلب</button>
+            <button type="submit" class="submit-btn" id="submitBtn">Submit Request</button>
         </form>
         
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <div style="color:#6b7280;font-size:15px">جاري إرسال طلبك...</div>
+            <div style="color:#6b7280;font-size:15px">Submitting your request...</div>
         </div>
         
         <div class="message success" id="successMsg" style="display:none">
             <div class="success-icon">✅</div>
-            <div style="font-size:18px;font-weight:700;margin-bottom:8px">تم إرسال طلبك بنجاح!</div>
-            <div style="font-size:14px">سنتواصل معك قريباً</div>
+            <div style="font-size:18px;font-weight:700;margin-bottom:8px">Request Submitted Successfully!</div>
+            <div style="font-size:14px">We'll contact you soon</div>
         </div>
         
         <div class="message error" id="errorMsg" style="display:none">
-            <div style="font-size:16px">❌ حدث خطأ. يرجى المحاولة مرة أخرى.</div>
+            <div style="font-size:16px">❌ Something went wrong. Please try again.</div>
         </div>
     </div>
 
@@ -246,7 +246,7 @@
             if (!file) return;
             const preview = document.getElementById(previewId);
             const size = (file.size / 1024 / 1024).toFixed(2);
-            preview.innerHTML = `<div class="file-item"><span class="file-name">📎 ${file.name} (${size} MB)</span><button type="button" class="remove-btn" onclick="clearFile('${input.id}','${previewId}')">حذف</button></div>`;
+            preview.innerHTML = `<div class="file-item"><span class="file-name">📎 ${file.name} (${size} MB)</span><button type="button" class="remove-btn" onclick="clearFile('${input.id}','${previewId}')">Remove</button></div>`;
             preview.style.display = 'block';
         }
 
@@ -259,7 +259,7 @@
             const container = document.getElementById('orderContainer');
             const div = document.createElement('div');
             div.className = 'order-item';
-            div.innerHTML = '<input type="text" class="order-input" placeholder="رقم الطلب"><button type="button" class="remove-btn" onclick="removeOrder(this)">حذف</button>';
+            div.innerHTML = '<input type="text" class="order-input" placeholder="Order ID"><button type="button" class="remove-btn" onclick="removeOrder(this)">Remove</button>';
             container.appendChild(div);
             container.querySelectorAll('.remove-btn').forEach(b => b.style.display = 'inline-block');
         }
