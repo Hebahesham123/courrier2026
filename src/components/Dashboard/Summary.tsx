@@ -1687,7 +1687,7 @@ const Summary: React.FC = () => {
                         <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
                           <Package className="w-4 h-4 text-white" />
                         </div>
-                        <h2 className="text-base font-bold text-gray-900">📦 ملخص الطلبات</h2>
+                        <h2 className="text-base font-bold text-gray-900">📦 ملخص الطلبات (v2)</h2>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2">
