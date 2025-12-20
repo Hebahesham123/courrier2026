@@ -285,6 +285,7 @@ const Summary: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [selectedOrders, setSelectedOrders] = useState<Order[]>([])
   const [modalTitle, setModalTitle] = useState("")
+  const [refreshKey, setRefreshKey] = useState(0) // Force refresh counter
 
   // Hold Fee Management States
   const [editingHoldFee, setEditingHoldFee] = useState<string | null>(null)
@@ -783,7 +784,10 @@ const Summary: React.FC = () => {
   useEffect(() => {
     const subscription = supabase
       .channel("orders_changes_summary")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
+        console.log('Real-time order change detected:', payload)
+        // Force immediate refresh
+        setRefreshKey(prev => prev + 1)
         fetchSummary()
         fetchAllHoldFeesData() // Also refetch hold fees data on changes
       })
@@ -1238,7 +1242,9 @@ const Summary: React.FC = () => {
   }
 
   // Calculate comprehensive accounting metrics
-  const calculateAccountingMetrics = () => {
+  const calculateAccountingMetrics = useCallback(() => {
+    // Using refreshKey to ensure recalculation on real-time updates
+    console.log('Calculating metrics, refreshKey:', refreshKey, 'allOrders:', allOrders.length)
     const filteredOrders = selectedCourier
       ? allOrders.filter((o) => o.assigned_courier_id === selectedCourier.courierId)
       : allOrders
@@ -1494,7 +1500,7 @@ const Summary: React.FC = () => {
       onHandTotal,
 
     }
-  }
+  }, [allOrders, selectedCourier, refreshKey])
 
   if (loading) {
     return (
