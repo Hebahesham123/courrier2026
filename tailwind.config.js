@@ -19,12 +19,13 @@ export default {
         ],
         arabic: [
           'Cairo',
+          'Noto Sans Arabic',
           'Segoe UI',
-          'system-ui',
-          '-apple-system',
-          'BlinkMacSystemFont',
           'Tahoma',
-          'Arial',
+          'Arial Unicode MS',
+          'Geeza Pro',
+          'Traditional Arabic',
+          'system-ui',
           'sans-serif'
         ]
       },

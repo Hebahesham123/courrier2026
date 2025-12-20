@@ -1,6 +1,33 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Force Arabic fonts on all form elements for mobile compatibility */
+[dir="rtl"] select,
+[dir="rtl"] option,
+[dir="rtl"] input,
+[dir="rtl"] textarea,
+[dir="rtl"] button {
+  font-family: 'Cairo', 'Noto Sans Arabic', 'Geeza Pro', 'Traditional Arabic', 'Arial Unicode MS', 'Tahoma', system-ui, sans-serif !important;
+}
+
+/* iOS-specific font fix for Arabic dropdowns */
+@supports (-webkit-touch-callout: none) {
+  [dir="rtl"] select,
+  [dir="rtl"] option {
+    font-family: 'Geeza Pro', 'Cairo', 'Noto Sans Arabic', -apple-system, system-ui, sans-serif !important;
+    -webkit-appearance: none;
+  }
+}
+
+/* Android-specific font fix */
+@supports not (-webkit-touch-callout: none) {
+  [dir="rtl"] select,
+  [dir="rtl"] option {
+    font-family: 'Noto Sans Arabic', 'Cairo', 'Roboto', 'Tahoma', system-ui, sans-serif !important;
+  }
+}
+
 /* Always visible horizontal scrollbar for table */
 .table-scroll-container {
   overflow-x: scroll !important;

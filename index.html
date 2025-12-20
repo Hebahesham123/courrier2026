@@ -8,21 +8,40 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
 
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Preconnect for faster font loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Fonts - Added Noto Sans Arabic as universal fallback for Arabic -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-      html[dir="rtl"] * {
-        font-family: 'Cairo', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Tahoma, Arial, sans-serif !important;
+      /* Force Arabic fonts for all elements including native selects */
+      html[dir="rtl"] *,
+      html[dir="rtl"] select,
+      html[dir="rtl"] option,
+      html[dir="rtl"] input,
+      html[dir="rtl"] textarea {
+        font-family: 'Cairo', 'Noto Sans Arabic', 'Segoe UI', 'Tahoma', 'Arial Unicode MS', 'Geeza Pro', 'Traditional Arabic', system-ui, sans-serif !important;
         direction: rtl;
         text-align: right;
       }
 
-      html[dir="ltr"] * {
+      html[dir="ltr"] *,
+      html[dir="ltr"] select,
+      html[dir="ltr"] option {
         font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Tahoma, Arial, sans-serif;
         direction: ltr;
         text-align: left;
+      }
+      
+      /* Mobile-specific fixes for Arabic */
+      @supports (-webkit-touch-callout: none) {
+        /* iOS specific */
+        html[dir="rtl"] select,
+        html[dir="rtl"] option {
+          font-family: 'Geeza Pro', 'Cairo', 'Noto Sans Arabic', system-ui, sans-serif !important;
+        }
       }
 
       html,
