@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Request Form</title>
+    
+    <!-- Supabase Client Library -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .required {
+            color: #e53e3e;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        .file-upload {
+            border: 2px dashed #e2e8f0;
+            padding: 20px;
+            text-align: center;
+            background: #f8fafc;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .file-upload:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        
+        .file-upload input[type="file"] {
+            display: none;
+        }
+        
+        .file-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        
+        .file-info {
+            color: #666;
+            font-size: 13px;
+        }
+        
+        .file-preview {
+            margin-top: 10px;
+            padding: 12px;
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .file-name {
+            font-size: 13px;
+            color: #166534;
+        }
+        
+        .remove-btn {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .remove-btn:hover {
+            background: #fecaca;
+        }
+        
+        .order-ids-section {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .order-id-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .order-id-item input {
+            flex: 1;
+        }
+        
+        .order-id-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .add-order-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+        }
+        
+        .add-order-btn:hover {
+            background: #059669;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: all 0.3s ease;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .submit-btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .spinner {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .message {
+            padding: 16px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+        
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 Submit a Request</h1>
+        <p class="subtitle">We'll get back to you as soon as possible</p>
+        
+        <form id="requestForm">
+            <div class="form-group">
+                <label for="name">Full Name <span class="required">*</span></label>
+                <input type="text" id="name" name="name" required placeholder="Enter your full name">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email <span class="required">*</span></label>
+                <input type="email" id="email" name="email" required placeholder="your@email.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Phone <span class="required">*</span></label>
+                <input type="tel" id="phone" name="phone" required placeholder="Your phone number">
+            </div>
+            
+            <div class="form-group">
+                <label for="comment">Request Details <span class="required">*</span></label>
+                <textarea id="comment" name="comment" required placeholder="Please describe your request in detail..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Order IDs (Optional)</label>
+                <div class="order-ids-section">
+                    <div id="orderIdsContainer">
+                        <div class="order-id-item">
+                            <input type="text" class="order-id-input" placeholder="Enter order ID (e.g., #1234)">
+                            <button type="button" class="remove-btn" onclick="removeOrderId(this)" style="display: none;">Remove</button>
+                        </div>
+                    </div>
+                    <button type="button" class="add-order-btn" onclick="addOrderId()">+ Add Another Order</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Attach Photo (Optional)</label>
+                <div class="file-upload" onclick="document.getElementById('image').click()">
+                    <div class="file-icon">📷</div>
+                    <div class="file-info">Click to upload image</div>
+                    <div class="file-info" style="font-size: 11px; color: #999;">Max 5MB • JPG, PNG, GIF</div>
+                    <input type="file" id="image" accept="image/*" onchange="handleFileUpload(this, 'image')">
+                </div>
+                <div id="imagePreview" class="file-preview"></div>
+            </div>
+            
+            <div class="form-group">
+                <label>Attach Video (Optional)</label>
+                <div class="file-upload" onclick="document.getElementById('video').click()">
+                    <div class="file-icon">🎥</div>
+                    <div class="file-info">Click to upload video</div>
+                    <div class="file-info" style="font-size: 11px; color: #999;">Max 50MB • MP4, WebM</div>
+                    <input type="file" id="video" accept="video/*" onchange="handleFileUpload(this, 'video')">
+                </div>
+                <div id="videoPreview" class="file-preview"></div>
+            </div>
+            
+            <button type="submit" class="submit-btn" id="submitBtn">Submit Request</button>
+        </form>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div>Submitting your request...</div>
+        </div>
+        
+        <div class="message success" id="successMessage" style="display: none;">
+            ✅ Your request has been submitted successfully! We'll contact you soon.
+        </div>
+        
+        <div class="message error" id="errorMessage" style="display: none;">
+            ❌ <span id="errorText">Something went wrong. Please try again.</span>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // SUPABASE CONFIGURATION
+        // Replace these with your actual Supabase credentials
+        // ============================================
+        const SUPABASE_URL = 'https://bdquuixqypkmbvvfymvm.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkcXV1aXhxeXBrbWJ2dmZ5bXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyODgxNTQsImV4cCI6MjA4MDg2NDE1NH0.XK5oL2CyL_9-PGpDRjm1Mj4QPDGIqO-DIcNxZtQ0vIA';
+        
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // ============================================
+        // FILE UPLOAD FUNCTIONS
+        // ============================================
+        function handleFileUpload(input, type) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const maxSize = type === 'image' ? 5 * 1024 * 1024 : 50 * 1024 * 1024;
+            if (file.size > maxSize) {
+                alert(`File too large! Max size: ${type === 'image' ? '5MB' : '50MB'}`);
+                input.value = '';
+                return;
+            }
+            
+            const preview = document.getElementById(`${type}Preview`);
+            const size = (file.size / 1024 / 1024).toFixed(2);
+            
+            preview.innerHTML = `
+                <div class="file-item">
+                    <span class="file-name">${type === 'image' ? '📷' : '🎥'} ${file.name} (${size} MB)</span>
+                    <button type="button" class="remove-btn" onclick="removeFile('${type}')">Remove</button>
+                </div>
+            `;
+            preview.style.display = 'block';
+        }
+        
+        function removeFile(type) {
+            document.getElementById(type).value = '';
+            document.getElementById(`${type}Preview`).style.display = 'none';
+        }
+        
+        async function uploadFileToSupabase(file, type) {
+            try {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+                const filePath = `requests/${type}s/${fileName}`;
+                
+                const { data, error } = await supabase.storage
+                    .from('uploads')
+                    .upload(filePath, file);
+                
+                if (error) throw error;
+                
+                const { data: { publicUrl } } = supabase.storage
+                    .from('uploads')
+                    .getPublicUrl(filePath);
+                
+                return publicUrl;
+            } catch (error) {
+                console.error(`Error uploading ${type}:`, error);
+                return null;
+            }
+        }
+        
+        // ============================================
+        // ORDER ID FUNCTIONS
+        // ============================================
+        function addOrderId() {
+            const container = document.getElementById('orderIdsContainer');
+            const newItem = document.createElement('div');
+            newItem.className = 'order-id-item';
+            newItem.innerHTML = `
+                <input type="text" class="order-id-input" placeholder="Enter order ID">
+                <button type="button" class="remove-btn" onclick="removeOrderId(this)">Remove</button>
+            `;
+            container.appendChild(newItem);
+            
+            // Show remove buttons
+            container.querySelectorAll('.remove-btn').forEach(btn => btn.style.display = 'inline-block');
+        }
+        
+        function removeOrderId(button) {
+            const container = document.getElementById('orderIdsContainer');
+            button.parentElement.remove();
+            
+            const items = container.querySelectorAll('.order-id-item');
+            if (items.length === 1) {
+                items[0].querySelector('.remove-btn').style.display = 'none';
+            }
+        }
+        
+        // ============================================
+        // FORM SUBMISSION
+        // ============================================
+        document.getElementById('requestForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const successMessage = document.getElementById('successMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            const form = this;
+            
+            // Show loading
+            submitBtn.disabled = true;
+            form.style.display = 'none';
+            loading.style.display = 'block';
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'none';
+            
+            try {
+                // Collect order IDs
+                const orderIds = [];
+                document.querySelectorAll('.order-id-input').forEach(input => {
+                    if (input.value.trim()) orderIds.push(input.value.trim());
+                });
+                
+                // Upload files if present
+                let imageUrl = null;
+                let videoUrl = null;
+                
+                const imageFile = document.getElementById('image').files[0];
+                const videoFile = document.getElementById('video').files[0];
+                
+                if (imageFile) {
+                    imageUrl = await uploadFileToSupabase(imageFile, 'image');
+                }
+                
+                if (videoFile) {
+                    videoUrl = await uploadFileToSupabase(videoFile, 'video');
+                }
+                
+                // Prepare request data
+                const requestData = {
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+                    comment: document.getElementById('comment').value,
+                    order_id: orderIds.length > 0 ? orderIds.join(', ') : null,
+                    image_url: imageUrl,
+                    video_url: videoUrl,
+                    status: 'pending',
+                    created_by: 'shopify-form',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+                
+                console.log('Submitting request:', requestData);
+                
+                // Insert into Supabase
+                const { data, error } = await supabase
+                    .from('requests')
+                    .insert([requestData]);
+                
+                if (error) throw error;
+                
+                // Success!
+                loading.style.display = 'none';
+                successMessage.style.display = 'block';
+                form.reset();
+                
+                // Reset previews
+                document.getElementById('imagePreview').style.display = 'none';
+                document.getElementById('videoPreview').style.display = 'none';
+                
+                // Reset order IDs
+                document.getElementById('orderIdsContainer').innerHTML = `
+                    <div class="order-id-item">
+                        <input type="text" class="order-id-input" placeholder="Enter order ID (e.g., #1234)">
+                        <button type="button" class="remove-btn" onclick="removeOrderId(this)" style="display: none;">Remove</button>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                loading.style.display = 'none';
+                form.style.display = 'block';
+                submitBtn.disabled = false;
+                document.getElementById('errorText').textContent = error.message || 'Failed to submit. Please try again.';
+                errorMessage.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
+
