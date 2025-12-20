@@ -558,36 +558,39 @@ const OrdersList: React.FC = () => {
       const endDate = new Date(selectedDate)
       endDate.setHours(23, 59, 59, 999)
 
-      // Get ALL orders assigned to the current courier (regardless of status)
-      // First try to get orders by assigned_at date, then fallback to updated_at for legacy orders
-      const { data: assignedOrders, error: assignedError } = await supabase
+      // Get ALL active orders assigned to the current courier (pending/assigned status)
+      // These should ALWAYS show regardless of date - they are the courier's current work
+      const { data: activeOrders, error: activeError } = await supabase
         .from("orders")
         .select("*")
         .eq("assigned_courier_id", user.id)
+        .in("status", ["pending", "assigned"])
+        .order("created_at", { ascending: false })
+      
+      // Get completed orders (delivered, canceled, partial, return) filtered by date
+      // These are historical and should be filtered by the date they were completed
+      const { data: completedOrders, error: completedError } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("assigned_courier_id", user.id)
+        .in("status", ["delivered", "canceled", "partial", "return", "returned"])
         .gte("updated_at", startDate.toISOString())
         .lte("updated_at", endDate.toISOString())
         .order("updated_at", { ascending: false })
       
-      // Also fetch orders by assigned_at for more accurate assignment date tracking
-      const { data: assignedAtOrders } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("assigned_courier_id", user.id)
-        .gte("assigned_at", startDate.toISOString())
-        .lte("assigned_at", endDate.toISOString())
-        .order("assigned_at", { ascending: false })
-      
-      // Merge both results, removing duplicates (prefer assigned_at orders)
+      // Merge both results - active orders always show, completed orders filtered by date
       const orderMap = new Map<string, any>()
-      for (const order of (assignedAtOrders || [])) {
+      for (const order of (activeOrders || [])) {
         orderMap.set(order.id, order)
       }
-      for (const order of (assignedOrders || [])) {
+      for (const order of (completedOrders || [])) {
         if (!orderMap.has(order.id)) {
           orderMap.set(order.id, order)
         }
       }
       const mergedAssignedOrders = Array.from(orderMap.values())
+      
+      const assignedError = activeError || completedError
 
       if (assignedError) {
         console.error("Error fetching assigned orders:", assignedError)
