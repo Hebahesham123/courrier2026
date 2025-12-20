@@ -558,39 +558,42 @@ const OrdersList: React.FC = () => {
       const endDate = new Date(selectedDate)
       endDate.setHours(23, 59, 59, 999)
 
-      // Get ALL active orders assigned to the current courier (pending/assigned status)
-      // These should ALWAYS show regardless of date - they are the courier's current work
-      const { data: activeOrders, error: activeError } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("assigned_courier_id", user.id)
-        .in("status", ["pending", "assigned"])
-        .order("created_at", { ascending: false })
+      // Get orders assigned to this courier on the selected date
+      // Primary filter: assigned_at (when order was assigned to courier)
+      // Fallback: updated_at (for legacy orders without assigned_at)
       
-      // Get completed orders (delivered, canceled, partial, return) filtered by date
-      // These are historical and should be filtered by the date they were completed
-      const { data: completedOrders, error: completedError } = await supabase
+      // Try assigned_at first (accurate assignment date)
+      const { data: assignedAtOrders, error: assignedAtError } = await supabase
         .from("orders")
         .select("*")
         .eq("assigned_courier_id", user.id)
-        .in("status", ["delivered", "canceled", "partial", "return", "returned"])
+        .gte("assigned_at", startDate.toISOString())
+        .lte("assigned_at", endDate.toISOString())
+        .order("assigned_at", { ascending: false })
+      
+      // Also get by updated_at for orders without assigned_at (legacy)
+      const { data: updatedAtOrders, error: updatedAtError } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("assigned_courier_id", user.id)
+        .is("assigned_at", null)  // Only get orders WITHOUT assigned_at
         .gte("updated_at", startDate.toISOString())
         .lte("updated_at", endDate.toISOString())
         .order("updated_at", { ascending: false })
       
-      // Merge both results - active orders always show, completed orders filtered by date
+      // Merge both results
       const orderMap = new Map<string, any>()
-      for (const order of (activeOrders || [])) {
+      for (const order of (assignedAtOrders || [])) {
         orderMap.set(order.id, order)
       }
-      for (const order of (completedOrders || [])) {
+      for (const order of (updatedAtOrders || [])) {
         if (!orderMap.has(order.id)) {
           orderMap.set(order.id, order)
         }
       }
       const mergedAssignedOrders = Array.from(orderMap.values())
       
-      const assignedError = activeError || completedError
+      const assignedError = assignedAtError || updatedAtError
 
       if (assignedError) {
         console.error("Error fetching assigned orders:", assignedError)
