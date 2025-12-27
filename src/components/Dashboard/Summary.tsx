@@ -1073,6 +1073,41 @@ const Summary: React.FC = () => {
     window.open(`https://wa.me/${cleanPhone}`, '_blank')
   }
 
+  // Helper function to check if order was edited by courier
+  // For courier dashboard: Only count orders where courier has changed the status from "assigned" to something else
+  // This ensures all boxes are zero until courier makes changes
+  const wasOrderEditedByCourier = (order: Order): boolean => {
+    // If order status is "pending", don't count it (not assigned yet)
+    if (order.status === "pending") {
+      return false
+    }
+    
+    // If order status is "assigned" (مكلف), this means it was assigned but courier hasn't changed status yet
+    // Only count it if courier made payment changes (payment_sub_type, collected_by, partial_paid_amount)
+    // BUT if order is already paid (has payment info from Shopify), courier can just change status
+    if (order.status === "assigned") {
+      // Check if courier made payment-related changes
+      if (order.payment_sub_type || order.collected_by) {
+        return true
+      }
+      // Check if courier added partial payment
+      if (Number(order.partial_paid_amount || 0) > 0) {
+        return true
+      }
+      // If still "assigned" with no changes, don't count it (box should be zero)
+      return false
+    }
+    
+    // If order status is NOT "pending" and NOT "assigned", courier changed the status
+    // This means courier made changes, so count it
+    if (order.status && !["pending", "assigned"].includes(order.status)) {
+      return true
+    }
+    
+    // Default: don't count it
+    return false
+  }
+
   // Helper function to get the actual order amount the courier handled
   const getCourierOrderAmount = (order: Order): number => {
     if (Number(order.partial_paid_amount || 0) > 0) {
@@ -1245,9 +1280,23 @@ const Summary: React.FC = () => {
   const calculateAccountingMetrics = useCallback(() => {
     // Using refreshKey to ensure recalculation on real-time updates
     console.log('Calculating metrics, refreshKey:', refreshKey, 'allOrders:', allOrders.length)
-    const filteredOrders = selectedCourier
+    let filteredOrders = selectedCourier
       ? allOrders.filter((o) => o.assigned_courier_id === selectedCourier.courierId)
       : allOrders
+    
+    // For courier users, only count orders that were edited by the courier
+    // This means orders where courier changed status from "assigned" to something else
+    // OR orders where courier made payment changes
+    if (isCourier && user?.id) {
+      filteredOrders = filteredOrders.filter((o) => {
+        const wasEdited = wasOrderEditedByCourier(o)
+        if (!wasEdited) {
+          console.log(`Order ${o.order_id} not counted - status: ${o.status}, payment_sub_type: ${o.payment_sub_type}, collected_by: ${o.collected_by}`)
+        }
+        return wasEdited
+      })
+      console.log(`Filtered orders for courier (only edited): ${filteredOrders.length} out of ${allOrders.length}`)
+    }
 
     // Overall Totals - Calculate as sum of all status counts to ensure accuracy
     const totalOrdersCount = filteredOrders.length
@@ -1500,7 +1549,7 @@ const Summary: React.FC = () => {
       onHandTotal,
 
     }
-  }, [allOrders, selectedCourier, refreshKey])
+  }, [allOrders, selectedCourier, refreshKey, isCourier, user?.id, includeHoldFeesInPayment])
 
   if (loading) {
     return (
@@ -3282,107 +3331,89 @@ const Summary: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Content - Mobile Optimized for Couriers */}
+        {/* Main Content - Dashboard will be built here */}
         <div className={`max-w-7xl mx-auto ${isCourier ? "px-3 py-2" : "px-4 py-3"}`}>
           <div className={isCourier ? "space-y-3" : "space-y-4"}>
-            {/* 📦 Order Summary Section */}
-            <div className={`bg-white rounded-xl border border-gray-200 ${isCourier ? "p-3" : "p-3"}`}>
-              <div className={`flex items-center gap-2 ${isCourier ? "mb-2" : "mb-2"}`}>
-                <div
-                  className={`bg-blue-100 rounded-xl flex items-center justify-center ${
-                    isCourier ? "w-8 h-8" : "w-10 h-10"
-                  }`}
-                >
-                  <Package className={`text-blue-600 ${isCourier ? "w-4 h-4" : "w-6 h-6"}`} />
+            <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">لوحة التحكم</h2>
+              <p className="text-gray-600">سيتم بناء لوحة التحكم الجديدة هنا</p>
+              <p className="text-sm text-gray-500 mt-2">يرجى إعطاء المواصفات الجديدة</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Orders Modal - Mobile Optimized */}
+        {selectedOrders.length > 0 && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div
+              className={`bg-white rounded-lg w-full max-h-[90vh] overflow-hidden flex flex-col shadow-xl ${
+                isCourier ? "max-w-md" : "max-w-5xl"
+              }`}
+            >
+              {/* Modal Header */}
+              <div className={`bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-10 ${isCourier ? "p-3" : "p-4"}`}>
+                <div className="flex items-center gap-2">
+                  <div className={`bg-blue-50 rounded-lg flex items-center justify-center ${isCourier ? "w-8 h-8" : "w-10 h-10"}`}>
+                    <Filter className={`text-blue-600 ${isCourier ? "w-4 h-4" : "w-5 h-5"}`} />
+                  </div>
+                  <div>
+                    <h3 className={`font-bold text-gray-900 ${isCourier ? "text-base" : "text-lg"}`}>{modalTitle}</h3>
+                    <p className={`text-gray-600 ${isCourier ? "text-xs" : "text-sm"}`}>
+                      {selectedOrders.length} {translate("ordersCount")}
+                    </p>
+                  </div>
                 </div>
-                <h2 className={`font-bold text-gray-900 ${isCourier ? "text-lg" : "text-xl"}`}>
-                  {isCourier ? "📦 الطلبات" : "📦 ملخص الطلبات"}
-                </h2>
+                <button
+                  onClick={() => setSelectedOrders([])}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label={translate("close")}
+                >
+                  <X className={`text-gray-600 ${isCourier ? "w-4 h-4" : "w-5 h-5"}`} />
+                </button>
               </div>
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-4" ref={ordersModalScrollRef}>
+                <div className={`space-y-3 ${isCourier ? "space-y-2" : "space-y-4"}`}>
+                  {selectedOrders.map((order) => (
+                    <div
+                      key={order.id}
+                      className={`bg-white border border-gray-200 rounded-lg p-3 ${isCourier ? "p-2" : "p-4"}`}
+                    >
+                      <div className={`flex items-start justify-between ${isCourier ? "mb-2" : "mb-3"}`}>
+                        <div className="flex-1">
+                          <h4 className={`font-bold text-gray-900 ${isCourier ? "text-sm" : "text-base"}`}>
+                            {order.order_id}
+                          </h4>
+                          <p className={`text-gray-600 ${isCourier ? "text-xs" : "text-sm"}`}>{order.customer_name}</p>
+                          <p className={`text-gray-500 ${isCourier ? "text-xs" : "text-sm"}`}>{order.address}</p>
+                        </div>
+                        <div className={`text-right ${isCourier ? "ml-2" : "ml-4"}`}>
+                          <p className={`font-bold text-gray-900 ${isCourier ? "text-sm" : "text-base"}`}>
+                            {Number(order.total_order_fees || 0).toFixed(0)} ج.م
+                          </p>
+                          <p className={`text-gray-600 ${isCourier ? "text-xs" : "text-sm"}`}>
+                            {getDisplayPaymentMethod(order)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Orders Metrics Grid */}
+        <div className={`max-w-7xl mx-auto ${isCourier ? "px-3 py-2" : "px-4 py-3"}`}>
+          <div className={isCourier ? "space-y-3" : "space-y-4"}>
+            <div className={`grid ${isCourier ? "grid-cols-1 gap-3" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"}`}>
               <div
-                className={`grid ${
-                  isCourier ? "grid-cols-1 gap-3" : "grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+                className={`bg-blue-50 border-2 border-blue-200 rounded-xl cursor-pointer hover:shadow-lg transition-all group ${
+                  isCourier ? "p-4" : "p-6"
                 }`}
+                onClick={() => openOrders(metrics.assigned?.orders || [], "الطلبات المكلفة")}
               >
-                {/* Total Orders */}
-                <div
-                  className={`bg-gray-50 border-2 border-gray-200 rounded-xl cursor-pointer hover:shadow-lg transition-all group ${
-                    isCourier ? "p-4" : "p-6"
-                  }`}
-                  onClick={() => openOrders(metrics.allOrders, "إجمالي الطلبات")}
-                >
-                  <div className={`flex items-center gap-4 ${isCourier ? "mb-2" : "mb-4"}`}>
-                    <div
-                      className={`bg-gray-200 rounded-xl flex items-center justify-center ${
-                        isCourier ? "w-8 h-8" : "w-12 h-12"
-                      }`}
-                    >
-                      <Package className={`text-gray-700 ${isCourier ? "w-4 h-4" : "w-6 h-6"}`} />
-                    </div>
-                    <div>
-                      <h3 className={`font-bold text-gray-900 ${isCourier ? "text-sm" : "text-lg"}`}>
-                        {isCourier ? "الإجمالي" : "إجمالي الطلبات"}
-                      </h3>
-                      <p className={`text-gray-700 ${isCourier ? "text-xs" : "text-sm"}`}>
-                        {metrics.totalOrdersCount} طلب
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className={`flex justify-between items-center pt-2 border-t border-gray-300`}>
-                      <span className={`font-bold text-gray-700 ${isCourier ? "text-xs" : "text-sm"}`}>القيمة:</span>
-                      <span className={`font-bold text-gray-900 ${isCourier ? "text-sm" : "text-xl"}`}>
-                        {metrics.totalOrdersOriginalValue.toFixed(0)} ج.م
-                      </span>
-                    </div>
-                  </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity mt-3">
-                    <Eye className={`text-gray-600 mx-auto ${isCourier ? "w-4 h-4" : "w-5 h-5"}`} />
-                  </div>
-                </div>
-                {/* Pending Orders */}
-                <div
-                  className={`bg-yellow-50 border-2 border-yellow-200 rounded-xl cursor-pointer hover:shadow-lg transition-all group ${
-                    isCourier ? "p-4" : "p-6"
-                  }`}
-                  onClick={() => openOrders(metrics.pending?.orders || [], "الطلبات المعلقة")}
-                >
-                  <div className={`flex items-center gap-4 ${isCourier ? "mb-2" : "mb-4"}`}>
-                    <div
-                      className={`bg-yellow-200 rounded-xl flex items-center justify-center ${
-                        isCourier ? "w-8 h-8" : "w-12 h-12"
-                      }`}
-                    >
-                      <Clock className={`text-yellow-700 ${isCourier ? "w-4 h-4" : "w-6 h-6"}`} />
-                    </div>
-                    <div>
-                      <h3 className={`font-bold text-yellow-900 ${isCourier ? "text-sm" : "text-lg"}`}>
-                        {isCourier ? "المعلقة" : "الطلبات المعلقة"}
-                      </h3>
-                      <p className={`text-yellow-700 ${isCourier ? "text-xs" : "text-sm"}`}>
-                        {metrics.pending?.count || 0} طلب
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className={`flex justify-between items-center pt-2 border-t border-yellow-300`}>
-                      <span className={`font-bold text-yellow-700 ${isCourier ? "text-xs" : "text-sm"}`}>القيمة:</span>
-                      <span className={`font-bold text-yellow-900 ${isCourier ? "text-sm" : "text-xl"}`}>
-                        {(metrics.pending?.originalValue || 0).toFixed(0)} ج.م
-                      </span>
-                    </div>
-                  </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity mt-3">
-                    <Eye className={`text-yellow-600 mx-auto ${isCourier ? "w-4 h-4" : "w-5 h-5"}`} />
-                  </div>
-                </div>
-                {/* Assigned Orders */}
-                <div
-                  className={`bg-blue-50 border-2 border-blue-200 rounded-xl cursor-pointer hover:shadow-lg transition-all group ${
-                    isCourier ? "p-4" : "p-6"
-                  }`}
-                  onClick={() => openOrders(metrics.assigned?.orders || [], "الطلبات المكلفة")}
-                >
                   <div className={`flex items-center gap-4 ${isCourier ? "mb-2" : "mb-4"}`}>
                     <div
                       className={`bg-blue-200 rounded-xl flex items-center justify-center ${
@@ -3688,10 +3719,313 @@ const Summary: React.FC = () => {
                     <Eye className={`text-purple-600 mx-auto ${isCourier ? "w-4 h-4" : "w-5 h-5"}`} />
                   </div>
                 </div>
+                
+                {/* Successful Orders (Delivered) */}
+                <div
+                  className={`bg-green-50 border-2 border-green-200 rounded-xl cursor-pointer hover:shadow-lg transition-all group ${
+                    isCourier ? "p-4" : "p-6"
+                  }`}
+                  onClick={() => openOrders(metrics.delivered.orders, "الطلبات الناجحة")}
+                >
+                  <div className={`flex items-center gap-4 ${isCourier ? "mb-2" : "mb-4"}`}>
+                    <div
+                      className={`bg-green-200 rounded-xl flex items-center justify-center ${
+                        isCourier ? "w-8 h-8" : "w-12 h-12"
+                      }`}
+                    >
+                      <CheckCircle className={`text-green-700 ${isCourier ? "w-4 h-4" : "w-6 h-6"}`} />
+                    </div>
+                    <div>
+                      <h3 className={`font-bold text-green-900 ${isCourier ? "text-sm" : "text-lg"}`}>
+                        الطلبات الناجحة
+                      </h3>
+                      <p className={`text-green-700 ${isCourier ? "text-xs" : "text-sm"}`}>
+                        {metrics.delivered.count} طلب
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className={`flex justify-between items-center pt-2 border-t border-green-300`}>
+                      <span className={`font-bold text-green-700 ${isCourier ? "text-xs" : "text-sm"}`}>المحصل:</span>
+                      <span className={`font-bold text-green-900 ${isCourier ? "text-sm" : "text-xl"}`}>
+                        {metrics.delivered.courierCollected.toFixed(0)} ج.م
+                      </span>
+                    </div>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity mt-3">
+                    <Eye className={`text-green-600 mx-auto ${isCourier ? "w-4 h-4" : "w-5 h-5"}`} />
+                  </div>
+                </div>
+                
+                {/* Value Box */}
+                <div
+                  className={`bg-indigo-50 border-2 border-indigo-200 rounded-xl cursor-pointer hover:shadow-lg transition-all group ${
+                    isCourier ? "p-4" : "p-6"
+                  }`}
+                  onClick={() => openOrders(metrics.allOrders, "قيمة الطلبات")}
+                >
+                  <div className={`flex items-center gap-4 ${isCourier ? "mb-2" : "mb-4"}`}>
+                    <div
+                      className={`bg-indigo-200 rounded-xl flex items-center justify-center ${
+                        isCourier ? "w-8 h-8" : "w-12 h-12"
+                      }`}
+                    >
+                      <DollarSign className={`text-indigo-700 ${isCourier ? "w-4 h-4" : "w-6 h-6"}`} />
+                    </div>
+                    <div>
+                      <h3 className={`font-bold text-indigo-900 ${isCourier ? "text-sm" : "text-lg"}`}>
+                        قيمة الطلبات
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className={`flex justify-between items-center pt-2 border-t border-indigo-300`}>
+                      <span className={`font-bold text-indigo-700 ${isCourier ? "text-xs" : "text-sm"}`}>القيمة:</span>
+                      <span className={`font-bold text-indigo-900 ${isCourier ? "text-sm" : "text-xl"}`}>
+                        {metrics.totalOrdersOriginalValue.toFixed(0)} ج.م
+                      </span>
+                    </div>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity mt-3">
+                    <Eye className={`text-indigo-600 mx-auto ${isCourier ? "w-4 h-4" : "w-5 h-5"}`} />
+                  </div>
+                </div>
+                
+                {/* Hold Box */}
+                <div
+                  className={`bg-orange-50 border-2 border-orange-200 rounded-xl cursor-pointer hover:shadow-lg transition-all group ${
+                    isCourier ? "p-4" : "p-6"
+                  }`}
+                  onClick={() => {
+                    const holdOrders = metrics.allOrders.filter(o => o.hold_fee && Number(o.hold_fee || 0) > 0)
+                    openOrders(holdOrders, "رسوم الحجز")
+                  }}
+                >
+                  <div className={`flex items-center gap-4 ${isCourier ? "mb-2" : "mb-4"}`}>
+                    <div
+                      className={`bg-orange-200 rounded-xl flex items-center justify-center ${
+                        isCourier ? "w-8 h-8" : "w-12 h-12"
+                      }`}
+                    >
+                      <AlertCircle className={`text-orange-700 ${isCourier ? "w-4 h-4" : "w-6 h-6"}`} />
+                    </div>
+                    <div>
+                      <h3 className={`font-bold text-orange-900 ${isCourier ? "text-sm" : "text-lg"}`}>
+                        رسوم الحجز
+                      </h3>
+                      <p className={`text-orange-700 ${isCourier ? "text-xs" : "text-sm"}`}>
+                        {metrics.allOrders.filter(o => o.hold_fee && Number(o.hold_fee || 0) > 0).length} طلب
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className={`flex justify-between items-center pt-2 border-t border-orange-300`}>
+                      <span className={`font-bold text-orange-700 ${isCourier ? "text-xs" : "text-sm"}`}>المبلغ:</span>
+                      <span className={`font-bold text-orange-900 ${isCourier ? "text-sm" : "text-xl"}`}>
+                        {metrics.totalHoldFees.toFixed(0)} ج.م
+                      </span>
+                    </div>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity mt-3">
+                    <Eye className={`text-orange-600 mx-auto ${isCourier ? "w-4 h-4" : "w-5 h-5"}`} />
+                  </div>
+                </div>
+                
+                {/* Total Cash on Hand */}
+                <div
+                  className={`bg-emerald-50 border-2 border-emerald-200 rounded-xl cursor-pointer hover:shadow-lg transition-all group ${
+                    isCourier ? "p-4" : "p-6"
+                  }`}
+                  onClick={() => openOrders(metrics.cashOnHandOrders.orders, "إجمالي النقد في اليد")}
+                >
+                  <div className={`flex items-center gap-4 ${isCourier ? "mb-2" : "mb-4"}`}>
+                    <div
+                      className={`bg-emerald-200 rounded-xl flex items-center justify-center ${
+                        isCourier ? "w-8 h-8" : "w-12 h-12"
+                      }`}
+                    >
+                      <Banknote className={`text-emerald-700 ${isCourier ? "w-4 h-4" : "w-6 h-6"}`} />
+                    </div>
+                    <div>
+                      <h3 className={`font-bold text-emerald-900 ${isCourier ? "text-sm" : "text-lg"}`}>
+                        إجمالي النقد في اليد
+                      </h3>
+                      <p className={`text-emerald-700 ${isCourier ? "text-xs" : "text-sm"}`}>
+                        {metrics.cashOnHandOrders.count} طلب
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className={`flex justify-between items-center pt-2 border-t border-emerald-300`}>
+                      <span className={`font-bold text-emerald-700 ${isCourier ? "text-xs" : "text-sm"}`}>المبلغ:</span>
+                      <span className={`font-bold text-emerald-900 ${isCourier ? "text-sm" : "text-xl"}`}>
+                        {metrics.cashOnHandOrders.amount.toFixed(0)} ج.م
+                      </span>
+                    </div>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity mt-3">
+                    <Eye className={`text-emerald-600 mx-auto ${isCourier ? "w-4 h-4" : "w-5 h-5"}`} />
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* 💰 Total Collected and Not Delivered Summary - Courier View */}
+        {/* 💳 Payment Methods Section */}
+        <div className={`max-w-7xl mx-auto ${isCourier ? "px-3 py-2" : "px-4 py-3"}`}>
+          <div className={isCourier ? "space-y-3" : "space-y-4"}>
+            <div className={`bg-white rounded-xl border border-gray-200 ${isCourier ? "p-3" : "p-3"}`}>
+              <div className={`flex items-center gap-2 ${isCourier ? "mb-2" : "mb-2"}`}>
+                <div
+                  className={`bg-purple-100 rounded-xl flex items-center justify-center ${
+                    isCourier ? "w-8 h-8" : "w-10 h-10"
+                  }`}
+                >
+                  <CreditCard className={`text-purple-600 ${isCourier ? "w-4 h-4" : "w-6 h-6"}`} />
+                </div>
+                <h2 className={`font-bold text-gray-900 ${isCourier ? "text-lg" : "text-xl"}`}>
+                  {isCourier ? "💳 طرق الدفع" : "💳 طرق الدفع"}
+                </h2>
+              </div>
+              <div
+                className={`grid ${
+                  isCourier ? "grid-cols-1 gap-3" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4"
+                }`}
+              >
+                {/* نقدًا (Cash) */}
+                {metrics.cashOnHandOrders.count > 0 && (
+                  <div
+                    className={`bg-emerald-50 border-2 border-emerald-200 rounded-xl cursor-pointer hover:shadow-lg transition-all group ${
+                      isCourier ? "p-4" : "p-4"
+                    }`}
+                    onClick={() => openOrders(metrics.cashOnHandOrders.orders, "طلبات نقداً", 'on_hand')}
+                  >
+                    <div className={`flex items-center gap-3 ${isCourier ? "mb-2" : "mb-3"}`}>
+                      <Banknote className={`text-emerald-600 ${isCourier ? "w-4 h-4" : "w-6 h-6"}`} />
+                      <h4 className={`font-semibold text-emerald-900 ${isCourier ? "text-xs" : "text-base"}`}>
+                        نقدًا
+                      </h4>
+                    </div>
+                    <div className="space-y-1">
+                      <p className={`font-bold text-emerald-900 ${isCourier ? "text-lg" : "text-2xl"}`}>
+                        {metrics.cashOnHandOrders.count}
+                      </p>
+                      <p className={`font-semibold text-emerald-700 ${isCourier ? "text-sm" : "text-lg"}`}>
+                        {metrics.cashOnHandOrders.amount.toFixed(0)} ج.م
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* إنستاباي (Instapay) */}
+                {metrics.instapayOrders.count > 0 && (
+                  <div
+                    className={`bg-cyan-50 border-2 border-cyan-200 rounded-xl cursor-pointer hover:shadow-lg transition-all group ${
+                      isCourier ? "p-4" : "p-4"
+                    }`}
+                    onClick={() => openOrders(metrics.instapayOrders.orders, "طلبات إنستاباي", 'instapay')}
+                  >
+                    <div className={`flex items-center gap-3 ${isCourier ? "mb-2" : "mb-3"}`}>
+                      <Smartphone className={`text-cyan-600 ${isCourier ? "w-4 h-4" : "w-6 h-6"}`} />
+                      <h4 className={`font-semibold text-cyan-900 ${isCourier ? "text-xs" : "text-base"}`}>
+                        إنستاباي
+                      </h4>
+                    </div>
+                    <div className="space-y-1">
+                      <p className={`font-bold text-cyan-900 ${isCourier ? "text-lg" : "text-2xl"}`}>
+                        {metrics.instapayOrders.count}
+                      </p>
+                      <p className={`font-semibold text-cyan-700 ${isCourier ? "text-sm" : "text-lg"}`}>
+                        {metrics.instapayOrders.amount.toFixed(0)} ج.م
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* المحفظة (Wallet) */}
+                {metrics.walletOrders.count > 0 && (
+                  <div
+                    className={`bg-teal-50 border-2 border-teal-200 rounded-xl cursor-pointer hover:shadow-lg transition-all group ${
+                      isCourier ? "p-4" : "p-4"
+                    }`}
+                    onClick={() => openOrders(metrics.walletOrders.orders, "طلبات المحفظة", 'wallet')}
+                  >
+                    <div className={`flex items-center gap-3 ${isCourier ? "mb-2" : "mb-3"}`}>
+                      <Wallet className={`text-teal-600 ${isCourier ? "w-4 h-4" : "w-6 h-6"}`} />
+                      <h4 className={`font-semibold text-teal-900 ${isCourier ? "text-xs" : "text-base"}`}>
+                        المحفظة
+                      </h4>
+                    </div>
+                    <div className="space-y-1">
+                      <p className={`font-bold text-teal-900 ${isCourier ? "text-lg" : "text-2xl"}`}>
+                        {metrics.walletOrders.count}
+                      </p>
+                      <p className={`font-semibold text-teal-700 ${isCourier ? "text-sm" : "text-lg"}`}>
+                        {metrics.walletOrders.amount.toFixed(0)} ج.م
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* ماكينة فيزا (Visa Machine) */}
+                {metrics.visaMachineOrders.count > 0 && (
+                  <div
+                    className={`bg-slate-50 border-2 border-slate-200 rounded-xl cursor-pointer hover:shadow-lg transition-all group ${
+                      isCourier ? "p-4" : "p-4"
+                    }`}
+                    onClick={() => openOrders(metrics.visaMachineOrders.orders, "طلبات ماكينة فيزا", 'visa_machine')}
+                  >
+                    <div className={`flex items-center gap-3 ${isCourier ? "mb-2" : "mb-3"}`}>
+                      <Monitor className={`text-slate-600 ${isCourier ? "w-4 h-4" : "w-6 h-6"}`} />
+                      <h4 className={`font-semibold text-slate-900 ${isCourier ? "text-xs" : "text-base"}`}>
+                        ماكينة فيزا
+                      </h4>
+                    </div>
+                    <div className="space-y-1">
+                      <p className={`font-bold text-slate-900 ${isCourier ? "text-lg" : "text-2xl"}`}>
+                        {metrics.visaMachineOrders.count}
+                      </p>
+                      <p className={`font-semibold text-slate-700 ${isCourier ? "text-sm" : "text-lg"}`}>
+                        {metrics.visaMachineOrders.amount.toFixed(0)} ج.م
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* باي موب (Paymob) */}
+                {metrics.paymobOrders.count > 0 && (
+                  <div
+                    className={`bg-blue-50 border-2 border-blue-200 rounded-xl cursor-pointer hover:shadow-lg transition-all group ${
+                      isCourier ? "p-4" : "p-4"
+                    }`}
+                    onClick={() => openOrders(metrics.paymobOrders.orders, "طلبات paymob", 'paymob')}
+                  >
+                    <div className={`flex items-center gap-3 ${isCourier ? "mb-2" : "mb-3"}`}>
+                      <CreditCard className={`text-blue-600 ${isCourier ? "w-4 h-4" : "w-6 h-6"}`} />
+                      <h4 className={`font-semibold text-blue-900 ${isCourier ? "text-xs" : "text-base"}`}>
+                        باي موب
+                      </h4>
+                    </div>
+                    <div className="space-y-1">
+                      <p className={`font-bold text-blue-900 ${isCourier ? "text-lg" : "text-2xl"}`}>
+                        {metrics.paymobOrders.count}
+                      </p>
+                      <p className={`font-semibold text-blue-700 ${isCourier ? "text-sm" : "text-lg"}`}>
+                        {metrics.paymobOrders.amount.toFixed(0)} ج.م
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+        {/* 💰 Total Collected and Not Delivered Summary - Courier View */}
+        <div className={`max-w-7xl mx-auto ${isCourier ? "px-3 py-2" : "px-4 py-3"}`}>
+          <div className={isCourier ? "space-y-3" : "space-y-4"}>
             <div className={`bg-white rounded-xl border border-gray-200 ${isCourier ? "p-4" : "p-6"}`}>
               <div className={`flex items-center gap-3 ${isCourier ? "mb-4" : "mb-6"}`}>
                 <div
@@ -4472,6 +4806,7 @@ const Summary: React.FC = () => {
             </div>
           </div>
         </div>
+        </div>
 
         {/* Orders Modal - Mobile Optimized */}
         {selectedOrders.length > 0 && (
@@ -5030,7 +5365,7 @@ const Summary: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
+        </div>
     </div>
   )
 }
